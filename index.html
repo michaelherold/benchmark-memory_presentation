@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>benchmark-memory - Measuring the memory performance of your code</title>
+    <link rel="stylesheet" type="text/css" href="build/build.css">
+  </head>
+  <body>
+    <article>
+      <section data-bespoke-hash="start">
+        <p class="visibly-hidden">This space left intentionally blank</p>
+      </section>
+      <section data-bespoke-hash="motivation-0">
+        <h2>Sprockets needs help</h2><small>Psst: You should help too! Check out&nbsp;<a href="http://confreaks.tv/videos/railsconf2016-saving-sprockets">his RailsConf 2016 talk</a>.</small>
+      </section>
+      <section data-bespoke-hash="motivation-1">
+        <h2><a href="https://github.com/rails/sprockets/issues/300">rails/sprockets#300</a></h2>
+        <p>Discourse assets take 10 seconds to refresh</p>
+      </section>
+      <section data-bespoke-hash="motivation-2">
+        <h2>One of the causes</h2>
+        <pre data-bespoke-bullet><code class="language-ruby">def concat_javascript_sources(buf, source)
+  if buf.bytesize > 0
+    buf << ";" unless string_end_with_semicolon?(buf)
+    buf << "\n" unless buf.end_with?("\n")
+  end
+  buf << source
+end
+</code></pre>
+      </section>
+      <section data-bespoke-hash="motivation-3">
+        <pre><code class="language-ruby">def string_end_with_semicolon?(str)
+  i = str.size - 1
+  while i >= 0
+    c = str[i]
+    i -= 1
+    if c == "\n" || c == " " || c == "\t"
+      next
+    elsif c != ";"
+      return false
+    else
+      return true
+    end
+  end
+  true
+end
+</code></pre>
+      </section>
+      <section data-bespoke-hash="motivation-4">
+        <h2>How can we speed this up?</h2>
+        <pre><code class="language-ruby">SEMICOLON_REGEX = /(;\s*\z|\A\s*\z)/.freeze
+
+def string_end_with_semicolon?(str)
+  return false if str.size.zero?
+  
+  str === SEMICOLON_REGEX
+end
+</code></pre>
+      </section>
+      <section data-bespoke-hash="motivation-5">
+        <h2>Hypothesis: Reverse regex</h2>
+        <pre><code class="language-ruby">SEMICOLON_REGEX = /(\A\s*;|\A\s*\z)/.freeze
+
+def string_end_with_semicolon?(str)
+  return false if str.size.zero?
+  
+  str.reverse === SEMICOLON_REGEX
+end
+</code></pre>
+      </section>
+      <section data-bespoke-hash="motivation-6">
+        <h2>Results</h2>
+        <pre><code>Comparison:
+          rev. regex:      106.9 i/s
+               regex:       65.1 i/s - 1.64x slower
+                walk:        6.3 i/s - 16.97x slower
+                </code></pre>
+      </section>
+      <section data-bespoke-hash="thesis">
+        <h2>Is this a good idea?</h2>
+      </section>
+      <section data-bespoke-hash="title">
+        <h1>benchmark-memory</h1>
+        <h3 data-bespoke-bullet>Measuring the memory performance of your code</h3>
+        <p data-bespoke-bullet>(in a benchmarking style)</p>
+      </section>
+      <section data-bespoke-hash="profiling">
+        <h2>Profiling: memory_profiler</h2>
+        <ul data-bespoke-bullet>
+          <li data-bespoke-bullet>Total memory allocated and retained</li>
+          <li data-bespoke-bullet>Number of strings allocated and retained</li>
+          <li data-bespoke-bullet>Number of objects allocated and retained</li>
+          <li data-bespoke-bullet>MRI 2.1+ only</li>
+        </ul>
+      </section>
+      <section data-bespoke-hash="model">
+        <h2>Model: benchmark-ips</h2>
+        <pre><code class="language-ruby">Benchmark.ips do |x|
+  x.report("test 1") { "str" + "append" }
+  x.report("test 2") { "str" << "append" }
+  
+  x.compare!
+end
+</code></pre>
+      </section>
+      <section data-bespoke-hash="dsl">
+        <h2>My DSL</h2>
+        <pre><code class="language-ruby">Benchmark.memory do |x|
+  x.report("test 1") { "str" + "append" }
+  x.report("test 2") { "str" << "append" }
+  
+  x.compare!
+end
+</code></pre>
+      </section>
+      <section data-bespoke-hash="output">
+        <h2>Output</h2>
+        <pre><code>Calculating -------------------------------------
+ test 1   120.000  memsize (     0.000  retained)
+            3.000  objects (     0.000  retained)
+            3.000  strings (     0.000  retained)
+ test 2    80.000  memsize (     0.000  retained)
+            2.000  objects (     0.000  retained)
+            2.000  strings (     0.000  retained)
+            
+Comparison:
+         test 2:         80 allocated
+         test 1:        120 allocated - 1.50x more
+         </code></pre>
+      </section>
+      <section data-bespoke-hash="try-it-out">
+        <h2>Try it out!</h2>
+        <pre><code class="language-sh">$ gem install benchmark-memory
+Fetching: benchmark-memory-0.1.0.gem (100%)
+Successfully installed benchmark-memory-0.1.0
+1 gem installed
+</code></pre>
+      </section>
+      <section data-bespoke-hash="hypothesis-redux">
+        <h2 data-bespoke-bullet>So ...</h2>
+        <h2 data-bespoke-bullet>Is using String#reverse a good idea?</h2>
+      </section>
+      <section data-bespoke-hash="benchmark">
+        <pre><code class="language-ruby">LENGTH = 1_000_000
+W = ["\n", " ", "\t"].freeze
+
+X = (LENGTH - 1).times
+  .map { W.sample }
+  .unshift(";").join.freeze
+  
+Benchmark.memory do |x|
+  x.report("walk")        { old?(X) }
+  x.report("regex")       { regex?(X) }
+  x.report("rev. regex")  { regex_reverse?(X) }
+  
+  x.compare!
+end
+</code></pre>
+      </section>
+      <section data-bespoke-hash="answer">
+        <pre><code>Comparison:
+     regex:        320 allocated
+rev. regex:    1000401 allocated - 3126.25x more
+      walk:  119997280 allocated - 374991.50x more
+      </code></pre>
+      </section>
+      <section data-bespoke-hash="answer-discussion-1">
+        <h2>Sadly, it's still hard to say.</h2>
+      </section>
+      <section data-bespoke-hash="answer-discussion-2">
+        <h2>Total memory allocation and retention doesn't tell the whole story.</h2>
+      </section>
+      <section data-bespoke-hash="answer-discussion-3">
+        <h2>What about GC pressure?</h2>
+      </section>
+      <section data-bespoke-hash="answer-discussion-4">
+        <h2>I still need to build that!</h2>
+      </section>
+      <section data-bespoke-hash="future-work">
+        <h2>Future Work</h2>
+        <ul data-bespoke-bullet>
+          <li data-bespoke-bullet>Clean up output</li>
+          <li data-bespoke-bullet>benchmark-ips/benchmark-memory wrapper</li>
+          <li data-bespoke-bullet>GC pressure measurements</li>
+          <li data-bespoke-bullet>Support for other Rubies?</li>
+        </ul>
+      </section>
+      <section data-bespoke-backdrop="emphatic" data-bespoke-hash="end" class="emphatic-text">
+        <p><b>Presentation available at:</b></p>
+        <p><a href="https://michaelherold.github.io/benchmark-memory_presentation" target="_blank">https://michaelherold.github.io/benchmark-memory_presentation</a></p>
+        <p><b>Want to chat?</b></p>
+        <ul class="contact-list">
+          <li><i class="fa fa-fw fa-envelope"></i><a href="mailto:michael.j.herold@gmail.com">michael.j.herold@gmail.com</a></li>
+          <li><i class="fa fa-fw fa-github"></i><a href="https://github.com/michaelherold">michaelherold</a></li>
+          <li><i class="fa fa-fw fa-twitter"></i><a href="https://twitter.com/mherold">mherold</a></li>
+        </ul>
+      </section>
+    </article>
+    <script src="build/build.js"></script>
+  </body>
+</html>
