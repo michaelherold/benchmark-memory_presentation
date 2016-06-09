@@ -1,0 +1,7 @@
+{
+  "name": "presentation-dryrb",
+  "version": "0.0.0",
+  "dependencies": {
+    "font-awesome": "fontawesome#^4.6.1"
+  }
+}

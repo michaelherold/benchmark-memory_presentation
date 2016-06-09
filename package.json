@@ -1,0 +1,50 @@
+{
+  "name": "benchmark-memory_presentation",
+  "version": "0.0.1",
+  "description": "A presentation on the benchmark-memory Ruby gem",
+  "author": {
+    "name": "Michael Herold",
+    "url": "https://michaeljherold.com"
+  },
+  "homepage": "https://michaelherold.github.io/benchmark-memory_presentation",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/michaelherold/benchmark-memory_presentation.git"
+  },
+  "license": "CC-BY-SA-4.0",
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "babel-core": "^6.9.1",
+    "babel-preset-es2015": "^6.9.0",
+    "bespoke": "^1.0.0",
+    "bespoke-backdrop": "^1.0.0",
+    "bespoke-bullets": "^1.1.0",
+    "bespoke-fullscreen": "^1.0.0",
+    "bespoke-hash": "^1.0.0",
+    "bespoke-keys": "^1.0.0",
+    "bespoke-progress": "^1.0.0",
+    "bespoke-scale": "^1.0.0",
+    "bespoke-theme-build-wars": "^1.0.1",
+    "bespoke-touch": "^1.0.0",
+    "browser-sync": "^2.13.0",
+    "debowerify": "^0.7.1",
+    "del": "^1.1.1",
+    "gh-pages": "^0.2.0",
+    "gulp": "^3.8.1",
+    "gulp-autoprefixer": "0.0.7",
+    "gulp-browserify": "^0.5.0",
+    "gulp-csso": "^0.2.9",
+    "gulp-if": "^2.0.1",
+    "gulp-jade": "^0.6.0",
+    "gulp-load-plugins": "^1.2.1",
+    "gulp-plumber": "^0.6.3",
+    "gulp-rename": "^1.2.0",
+    "gulp-stylus": "^1.0.2",
+    "gulp-uglify": "^0.3.1",
+    "gulp-util": "^2.2.17",
+    "highlight.js": "^9.3.0"
+  }
+}
